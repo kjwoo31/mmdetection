@@ -22,7 +22,9 @@ RUN rm /etc/apt/sources.list.d/cuda.list \
 #    pip config set global.index-url https://pypi.tuna.tsinghua.edu.cn/simple
 
 # Install the required packages
-RUN apt-get update \
+# Added rm apt lists to avoid Hash sum mismatch
+RUN rm -rf /var/lib/apt/lists/* \
+    && apt-get update -o Acquire::CompressionTypes::Order::=gz \
     && apt-get install -y ffmpeg libsm6 libxext6 git ninja-build libglib2.0-0 libsm6 libxrender-dev libxext6 \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
@@ -33,8 +35,8 @@ RUN pip install openmim && \
 
 # Install MMDetection
 RUN conda clean --all \
-    && git clone https://github.com/kjwoo31/mmdetection/tree/main /mmdetection \
+    && git clone https://github.com/kjwoo31/mmdetection.git /mmdetection \
     && cd /mmdetection \
     && pip install --no-cache-dir -e .
 
-WORKDIR /mmdetection
+WORKDIR /mnt/DL_TOOLS/mmdetection
