@@ -65,7 +65,7 @@ model = dict(
 # training settings
 max_epochs = 1000
 num_last_epochs = 50
-interval = 1
+interval = 10
 
 train_cfg = dict(type='EpochBasedTrainLoop', max_epochs=max_epochs, val_interval=interval)
 val_cfg = dict(type='ValLoop')
