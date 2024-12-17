@@ -92,13 +92,13 @@ test_dataloader = dict(
         type=dataset_type,
         data_root=data_root,
         ann_file='test.json',
+        metainfo=dict(classes=classes),
         data_prefix=dict(img=''),
         test_mode=True,
         pipeline=test_pipeline))
 test_evaluator = dict(
     type='CocoMetric',
     metric='bbox',
-    format_only=False,
     ann_file=data_root + 'test.json')
 
 tta_pipeline = [

@@ -63,9 +63,9 @@ model = dict(
     test_cfg=dict(score_thr=0.01, nms=dict(type='nms', iou_threshold=0.65)))
 
 # training settings
-max_epochs = 1000
-num_last_epochs = 50
-interval = 10
+max_epochs = 500
+num_last_epochs = 25
+interval = 1
 
 train_cfg = dict(type='EpochBasedTrainLoop', max_epochs=max_epochs, val_interval=interval)
 val_cfg = dict(type='ValLoop')
@@ -90,13 +90,13 @@ param_scheduler = [
         type='mmdet.QuadraticWarmupLR',
         by_epoch=True,
         begin=0,
-        end=20,
+        end=10,
         convert_to_iter_based=True),
     dict(
         # use cosine lr from 5 to 285 epoch
         type='CosineAnnealingLR',
         eta_min=base_lr * 0.05,
-        begin=20,
+        begin=10,
         T_max=max_epochs - num_last_epochs,
         end=max_epochs - num_last_epochs,
         by_epoch=True,
@@ -120,9 +120,14 @@ default_hooks = dict(
     sampler_seed=dict(type='DistSamplerSeedHook'),
     visualization=dict(type='DetVisualizationHook'),
     checkpoint=dict(
-        type='CheckpointHook',
-        interval=interval,
-        max_keep_ckpts=10),
+        type="CheckpointHook",
+        save_best="coco/bbox_mAP",
+        rule="greater"
+    )
+    # checkpoint=dict(
+    #     type='CheckpointHook',
+    #     interval=interval,
+    #     max_keep_ckpts=10),
     # early_stopping=dict(
     #     type="EarlyStoppingHook",
     #     monitor="coco/bbox_mAP",

@@ -3,7 +3,7 @@ _base_ = [
 ]
 
 img_scale = (480, 480)  # width, height
-classes = ('stop', 'walk', 'light-out', 'countdown-walk', 'countdown-light-out')
+classes = ('stop', 'walk', 'lightout', 'countdownwalk', 'countdownlightout')
 
 # dataset settings
 data_root = 'data/TrafficLightDetection/'
@@ -55,6 +55,7 @@ train_dataloader = dict(
     batch_size=8,
     num_workers=4,
     persistent_workers=True,
+    pin_memory=False,
     sampler=dict(type='DefaultSampler', shuffle=True),
     dataset=train_dataset)
 val_dataloader = dict(
@@ -91,13 +92,13 @@ test_dataloader = dict(
         type=dataset_type,
         data_root=data_root,
         ann_file='test.json',
+        metainfo=dict(classes=classes),
         data_prefix=dict(img=''),
         test_mode=True,
         pipeline=test_pipeline))
 test_evaluator = dict(
     type='CocoMetric',
     metric='bbox',
-    format_only=False,
     ann_file=data_root + 'test.json')
 
 tta_pipeline = [
