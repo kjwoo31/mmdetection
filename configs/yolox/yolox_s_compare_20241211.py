@@ -1,3 +1,7 @@
+_base_ = [
+    '../_base_/default_runtime.py', '../_base_/schedules/schedule_1x.py',
+]
+
 # model settings
 model = dict(
     type='YOLOX',
@@ -68,8 +72,6 @@ num_last_epochs = 25
 interval = 1
 
 train_cfg = dict(type='EpochBasedTrainLoop', max_epochs=max_epochs, val_interval=interval)
-val_cfg = dict(type='ValLoop')
-test_cfg = dict(type='TestLoop')
 
 # optimizer
 # default 8 gpu
@@ -111,14 +113,7 @@ param_scheduler = [
     )
 ]
 
-default_scope = 'mmdet'
-
 default_hooks = dict(
-    timer=dict(type='IterTimerHook'),
-    logger=dict(type='LoggerHook', interval=50),
-    param_scheduler=dict(type='ParamSchedulerHook'),
-    sampler_seed=dict(type='DistSamplerSeedHook'),
-    visualization=dict(type='DetVisualizationHook'),
     checkpoint=dict(
         type="CheckpointHook",
         save_best="coco/bbox_mAP",
@@ -134,21 +129,6 @@ default_hooks = dict(
     #     patience=50,
     #     min_delta=0.005),
     )
-
-env_cfg = dict(
-    cudnn_benchmark=False,
-    mp_cfg=dict(mp_start_method='fork', opencv_num_threads=0),
-    dist_cfg=dict(backend='nccl'),
-)
-
-vis_backends = [dict(type='LocalVisBackend')]
-visualizer = dict(
-    type='DetLocalVisualizer', vis_backends=vis_backends, name='visualizer')
-log_processor = dict(type='LogProcessor', window_size=50, by_epoch=True)
-
-log_level = 'INFO'
-load_from = None # './checkpoints/yolox_s_8x8_300e_coco_20211121_095711-4592a793.pth'
-resume = False
 
 custom_hooks = [
     dict(
