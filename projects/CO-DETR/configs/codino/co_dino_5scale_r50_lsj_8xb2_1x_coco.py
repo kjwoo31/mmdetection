@@ -1,4 +1,4 @@
-_base_ = 'mmdet::common/ssj_scp_270k_coco-instance.py'
+# _base_ = 'mmdet::common/ssj_scp_270k_coco-instance.py'
 
 custom_imports = dict(
     imports=['projects.CO-DETR.codetr'], allow_failed_imports=False)
@@ -6,7 +6,7 @@ custom_imports = dict(
 # model settings
 num_dec_layer = 6
 loss_lambda = 2.0
-num_classes = 80
+num_classes = 29
 
 image_size = (1024, 1024)
 batch_augments = [
@@ -28,16 +28,6 @@ model = dict(
         bgr_to_rgb=True,
         pad_mask=True,
         batch_augments=batch_augments),
-    backbone=dict(
-        type='ResNet',
-        depth=50,
-        num_stages=4,
-        out_indices=(0, 1, 2, 3),
-        frozen_stages=1,
-        norm_cfg=dict(type='BN', requires_grad=False),
-        norm_eval=True,
-        style='pytorch',
-        init_cfg=dict(type='Pretrained', checkpoint='torchvision://resnet50')),
     neck=dict(
         type='ChannelMapper',
         in_channels=[256, 512, 1024, 2048],
@@ -295,17 +285,40 @@ load_pipeline = [
     dict(type='Pad', size=image_size, pad_val=dict(img=(114, 114, 114))),
 ]
 
+# train_pipeline = [
+#     dict(type='CopyPaste', max_num_pasted=100),
+#     dict(type='PackDetInputs')
+# ]
+
+# train_dataloader = dict(
+#     sampler=dict(type='DefaultSampler', shuffle=True),
+#     dataset=dict(
+#         pipeline=train_pipeline,
+#         dataset=dict(
+#             filter_cfg=dict(filter_empty_gt=False), pipeline=load_pipeline)))
+
+load_pipeline = [
+    dict(type='LoadImageFromFile', backend_args=None),
+    dict(type='LoadAnnotations', with_bbox=True, with_mask=True),
+    dict(
+        type='RandomResize',
+        scale=image_size,
+        ratio_range=(0.8, 1.25),
+        keep_ratio=True),
+    dict(
+        type='RandomCrop',
+        crop_type='absolute_range',
+        crop_size=image_size,
+        recompute_bbox=True,
+        allow_negative_crop=True),
+    dict(type='FilterAnnotations', min_gt_bbox_wh=(1e-2, 1e-2)),
+    dict(type='RandomFlip', prob=0.5),
+    dict(type='Pad', size=image_size),
+]
 train_pipeline = [
     dict(type='CopyPaste', max_num_pasted=100),
     dict(type='PackDetInputs')
 ]
-
-train_dataloader = dict(
-    sampler=dict(type='DefaultSampler', shuffle=True),
-    dataset=dict(
-        pipeline=train_pipeline,
-        dataset=dict(
-            filter_cfg=dict(filter_empty_gt=False), pipeline=load_pipeline)))
 
 # follow ViTDet
 test_pipeline = [
@@ -319,22 +332,22 @@ test_pipeline = [
                    'scale_factor'))
 ]
 
-val_dataloader = dict(dataset=dict(pipeline=test_pipeline))
-test_dataloader = val_dataloader
+# val_dataloader = dict(dataset=dict(pipeline=test_pipeline))
+# test_dataloader = val_dataloader
 
 optim_wrapper = dict(
-    _delete_=True,
+    # _delete_=True,
     type='OptimWrapper',
     optimizer=dict(type='AdamW', lr=2e-4, weight_decay=0.0001),
     clip_grad=dict(max_norm=0.1, norm_type=2),
     paramwise_cfg=dict(custom_keys={'backbone': dict(lr_mult=0.1)}))
 
-val_evaluator = dict(metric='bbox')
-test_evaluator = val_evaluator
+# val_evaluator = dict(metric='bbox')
+# test_evaluator = val_evaluator
 
 max_epochs = 12
 train_cfg = dict(
-    _delete_=True,
+    # _delete_=True,
     type='EpochBasedTrainLoop',
     max_epochs=max_epochs,
     val_interval=1)
@@ -349,9 +362,9 @@ param_scheduler = [
         gamma=0.1)
 ]
 
-default_hooks = dict(
-    checkpoint=dict(by_epoch=True, interval=1, max_keep_ckpts=3))
-log_processor = dict(by_epoch=True)
+# default_hooks = dict(
+#     checkpoint=dict(by_epoch=True, interval=1, max_keep_ckpts=3))
+# log_processor = dict(by_epoch=True)
 
 # NOTE: `auto_scale_lr` is for automatically scaling LR,
 # USER SHOULD NOT CHANGE ITS VALUES.
