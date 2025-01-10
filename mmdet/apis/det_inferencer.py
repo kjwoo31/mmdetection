@@ -306,6 +306,7 @@ class DetInferencer(BaseInferencer):
             draw_pred: bool = True,
             pred_score_thr: float = 0.3,
             return_datasamples: bool = False,
+            return_labelme: bool = False,
             print_result: bool = False,
             no_save_pred: bool = True,
             out_dir: str = '',
@@ -334,6 +335,8 @@ class DetInferencer(BaseInferencer):
                 Defaults to 0.3.
             return_datasamples (bool): Whether to return results as
                 :obj:`DetDataSample`. Defaults to False.
+            return_labelme (bool) : Whether to return results as
+                labelme format. Defaults to False.
             print_result (bool): Whether to print the inference result w/o
                 visualization to the console. Defaults to False.
             no_save_pred (bool): Whether to force not to save prediction
@@ -416,7 +419,9 @@ class DetInferencer(BaseInferencer):
                 preds,
                 visualization,
                 return_datasamples=return_datasamples,
+                return_labelme=return_labelme,
                 print_result=print_result,
+                pred_score_thr=pred_score_thr,
                 no_save_pred=no_save_pred,
                 pred_out_dir=out_dir,
                 **postprocess_kwargs)
@@ -509,7 +514,9 @@ class DetInferencer(BaseInferencer):
         preds: PredType,
         visualization: Optional[List[np.ndarray]] = None,
         return_datasamples: bool = False,
+        return_labelme: bool = False,
         print_result: bool = False,
+        pred_score_thr: float = 0.3,
         no_save_pred: bool = False,
         pred_out_dir: str = '',
         **kwargs,
@@ -528,8 +535,12 @@ class DetInferencer(BaseInferencer):
             visualization (Optional[np.ndarray]): Visualized predictions.
             return_datasamples (bool): Whether to use Datasample to store
                 inference results. If False, dict will be used.
+            return_labelme (bool): Wheter to use labelme format to store
+                inference results. If False, dict will be used.
             print_result (bool): Whether to print the inference result w/o
                 visualization to the console. Defaults to False.
+            pred_score_thr (float): Minimum score of bboxes to log.
+                Defaults to 0.3.
             no_save_pred (bool): Whether to force not to save prediction
                 results. Defaults to False.
             pred_out_dir: Dir to save the inference results w/o
@@ -552,21 +563,119 @@ class DetInferencer(BaseInferencer):
 
         result_dict = {}
         results = preds
-        if not return_datasamples:
+        if not return_datasamples and not return_labelme:
             results = []
             for pred in preds:
                 result = self.pred2dict(pred, pred_out_dir)
                 results.append(result)
-        elif pred_out_dir != '':
+
+        elif return_datasamples and pred_out_dir != '':
             warnings.warn('Currently does not support saving datasample '
                           'when return_datasamples is set to True. '
                           'Prediction results are not saved!')
+        elif return_labelme and pred_out_dir != '':
+            results = []
+            for pred in preds:
+                result = self.pred2labelme(pred, pred_out_dir, pred_score_thr)
+                results.append(result)
+
         # Add img to the results after printing and dumping
         result_dict['predictions'] = results
         if print_result:
             print(result_dict)
         result_dict['visualization'] = visualization
+
         return result_dict
+
+    def pred2labelme(self,
+                  data_sample: DetDataSample,
+                  pred_out_dir: str = '',
+                  pred_score_thr: float = 0.3) -> Dict:
+        """Extract elements necessary to represent a prediction into
+        labelme format.
+
+        Args:
+            data_sample (:obj:`DetDataSample`): Predictions of the model.
+            pred_out_dir: Dir to save the inference results w/o
+                visualization. If left as empty, no file will be saved.
+                Defaults to ''.
+            pred_score_thr (float): Minimum score of bboxes to log.
+                Defaults to 0.3.
+                
+        Returns:
+            dict: Prediction results.
+        """
+        is_save_pred = True
+        if pred_out_dir == '':
+            is_save_pred = False
+
+        result = {
+            'version': '5.0.1',
+            'flags': {},
+            'shapes': [],
+            'imagePath': '',
+            'imageData': None,
+            'imageHeight': 0,
+            'imageWidth': 0,
+            'classType': 'indoor_detection-ev_state',
+            'grids': [],
+            'lineColor': [
+                0,
+                255,
+                0,
+                128
+            ],
+            'fillColor': [
+                255,
+                0,
+                0,
+                128
+            ],
+            'serviceArea': 'default'
+        }
+
+        if is_save_pred and 'img_path' in data_sample:
+            img_path = osp.basename(data_sample.img_path)
+            img_path = osp.splitext(img_path)[0]
+            out_img_path = osp.join(pred_out_dir, 'preds',
+                                    img_path + '_panoptic_seg.png')
+            out_json_path = osp.join(pred_out_dir, 'preds', img_path + '.json')
+            result['imagePath'] = osp.basename(data_sample.img_path)
+        elif is_save_pred:
+            out_img_path = osp.join(
+                pred_out_dir, 'preds',
+                f'{self.num_predicted_imgs}_panoptic_seg.png')
+            out_json_path = osp.join(pred_out_dir, 'preds',
+                                     f'{self.num_predicted_imgs}.json')
+            self.num_predicted_imgs += 1
+
+        if is_save_pred and 'ori_shape' in data_sample:
+            result['imageHeight'] = data_sample.ori_shape[0]
+            result['imageWidth'] = data_sample.ori_shape[1]
+
+        if 'pred_instances' in data_sample:
+            pred_instances = data_sample.pred_instances.numpy()
+            pred_label_list = pred_instances.labels.tolist()
+            pred_score_list = pred_instances.scores.tolist()
+            bboxes_list = pred_instances.bboxes.tolist()
+
+            for i in range(len(pred_label_list)):
+                if float(pred_score_list[i]) > pred_score_thr:
+                    bbox = bboxes_list[i]
+                    object_shape = {}
+                    object_shape['label'] = self.model.dataset_meta['classes'][pred_label_list[i]]
+                    object_shape['points'] = [
+                        [float(bbox[0]), float(bbox[1])], [float(bbox[2]), float(bbox[3])]]
+                    object_shape['probability'] = None
+                    object_shape['group_id'] = None
+                    object_shape['shape_type'] = 'rectangle'
+                    object_shape['flags'] = {}
+                    result['shapes'].append(object_shape)
+
+        if is_save_pred:
+            mmengine.dump(result, out_json_path)
+
+        return result
 
     # TODO: The data format and fields saved in json need further discussion.
     #  Maybe should include model name, timestamp, filename, image info etc.
