@@ -2,7 +2,7 @@ _base_ = [
     '../_base_/default_runtime.py', '../_base_/schedules/schedule_1x.py',
 ]
 
-num_classes = 10
+num_classes = 29
 
 # model settings
 model = dict(
@@ -139,13 +139,7 @@ custom_hooks = [
         ema_type='ExpMomentumEMA',
         momentum=0.0001,
         update_buffers=True,
-        priority=49),
-    dict(
-        type="MLflowLoggerHook",
-        experiment_name="MyExperiment",
-        run_name="MyRun",
-        log_every_n_steps=50
-    )
+        priority=49)
 ]
 
 auto_scale_lr = dict(base_batch_size=64)

@@ -1,4 +1,4 @@
-_base_ = ['./co_dino_5scale_r50_8xb2_1x_coco.py', 'mmdet::_base_/datasets/ev_state_dataset.py', 'mmdet::_base_/default_runtime.py']
+_base_ = ['./co_dino_5scale_r50_8xb2_1x_coco.py', 'mmdet::_base_/datasets/ev_state_dataset_auto_label.py', 'mmdet::_base_/default_runtime.py']
 
 pretrained = './checkpoints/swin_large_patch4_window12_384_22k.pth'  # noqa
 load_from = './checkpoints/co_dino_5scale_swin_large_16e_o365tococo-614254c9.pth'  # noqa

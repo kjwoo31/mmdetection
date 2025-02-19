@@ -1,9 +1,9 @@
 # dataset settings
 data_root = 'data/PanoramicViewDetection/'
 dataset_type = 'CocoDataset'
-img_scale = (320, 896)  # width, height
-classes = ('person', 'bicycle', 'motorcycle', 'kickboard', 'car', 'bus', 'truck', 'robot', 'animal','unknown')  # class order is wrong
-# classes = ('person', 'robot', 'car', 'truck', 'motorcycle', 'bicycle', 'bus', 'kickboard', 'animal')
+img_scale = (896, 320)  # width, height
+# classes = ('person', 'bicycle', 'motorcycle', 'kickboard', 'car', 'bus', 'truck', 'robot', 'animal','unknown')  # class order is wrong
+classes = ('person', 'robot', 'car', 'truck', 'motorcycle', 'bicycle', 'bus', 'kickboard', 'animal')
 train_batch_size = 8
 train_num_workers = 4
 eval_batch_size = 1
@@ -14,7 +14,8 @@ train_pipeline = [
     dict(type='Resize', scale=img_scale, keep_ratio=True),
     dict(
         type='Pad',
-        pad_to_square=True,
+        size=img_scale,
+        pad_to_square=False,
         pad_val=dict(img=(114.0, 114.0, 114.0))),
     dict(type='PackDetInputs')
 ]
@@ -24,7 +25,8 @@ test_pipeline = [
     dict(type='Resize', scale=img_scale, keep_ratio=True),
     dict(
         type='Pad',
-        pad_to_square=True,
+        size=img_scale,
+        pad_to_square=False,
         pad_val=dict(img=(114.0, 114.0, 114.0))),
     dict(type='LoadAnnotations', with_bbox=True),
     dict(
@@ -44,7 +46,8 @@ tta_pipeline = [
             [
                 dict(
                     type='Pad',
-                    pad_to_square=True,
+                    size=img_scale,
+                    pad_to_square=False,
                     pad_val=dict(img=(114.0, 114.0, 114.0))),
             ],
             [dict(type='LoadAnnotations', with_bbox=True)],

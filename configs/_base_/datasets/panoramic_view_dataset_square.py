@@ -1,12 +1,12 @@
 # dataset settings
-data_root = 'data/EVStateDetection/Train_data/yolo_train_data_2024_12_18_1/'
-# data_root = 'data/ibk/yolo_train_data_2025_2_10_9/train/'
+data_root = 'data/PanoramicViewDetection/'
 dataset_type = 'CocoDataset'
-img_scale = (640, 640)  # width, height
-classes = ('Door_open', 'Door_close', 'Door_moving', 'Door_sticker', 'Indicator', 'Hall_LED', 'Hall_LED_on', 'Hall_LED_off', 'up', 'down', 'unknown', 'nine', 'eight', 'seven', 'six', 'five', 'four', 'three', 'two', 'one', 'zero', 'L', 'B', 'P', 'G', 'R', 'F', 'N', 'M')
-train_batch_size = 2
-train_num_workers = 2
-eval_batch_size = 2
+img_scale = (896, 320)  # width, height
+# classes = ('person', 'bicycle', 'motorcycle', 'kickboard', 'car', 'bus', 'truck', 'robot', 'animal','unknown')  # class order is wrong
+classes = ('person', 'robot', 'car', 'truck', 'motorcycle', 'bicycle', 'bus', 'kickboard', 'animal')
+train_batch_size = 8
+train_num_workers = 4
+eval_batch_size = 1
 eval_num_workers = 2
 
 # pipeline

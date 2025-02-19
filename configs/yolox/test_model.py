@@ -2,7 +2,8 @@ _base_ = [
     '../_base_/default_runtime.py', '../_base_/schedules/schedule_1x.py',
 ]
 
-num_classes = 10
+num_classes = 29
+
 
 # model settings
 model = dict(
@@ -69,8 +70,8 @@ model = dict(
     test_cfg=dict(score_thr=0.01, nms=dict(type='nms', iou_threshold=0.65)))
 
 # training settings
-max_epochs = 500
-num_last_epochs = 25
+max_epochs = 5
+num_last_epochs = 1
 interval = 1
 
 train_cfg = dict(type='EpochBasedTrainLoop', max_epochs=max_epochs, val_interval=interval)
@@ -88,32 +89,15 @@ optim_wrapper = dict(
 # learning rate
 param_scheduler = [
     dict(
-        # use quadratic formula to warm up 5 epochs
-        # and lr is updated by iteration
-        # TODO: fix default scope in get function
-        type='mmdet.QuadraticWarmupLR',
-        by_epoch=True,
-        begin=0,
-        end=10,
-        convert_to_iter_based=True),
-    dict(
-        # use cosine lr from 5 to 285 epoch
         type='CosineAnnealingLR',
         eta_min=base_lr * 0.05,
-        begin=10,
-        T_max=max_epochs - num_last_epochs,
-        end=max_epochs - num_last_epochs,
+        begin=0,  # 시작부터 적용
+        T_max=max_epochs,
+        end=max_epochs,
         by_epoch=True,
         convert_to_iter_based=True),
-    dict(
-        # use fixed lr during last 15 epochs
-        type='ConstantLR',
-        by_epoch=True,
-        factor=1,
-        begin=max_epochs - num_last_epochs,
-        end=max_epochs,
-    )
 ]
+
 
 default_hooks = dict(
     checkpoint=dict(
@@ -125,7 +109,7 @@ default_hooks = dict(
         type="EarlyStoppingHook",
         monitor="coco/bbox_mAP",
         patience=50,
-        min_delta=0.005),
+        min_delta=0.005)
     )
 
 custom_hooks = [
@@ -140,6 +124,7 @@ custom_hooks = [
         momentum=0.0001,
         update_buffers=True,
         priority=49),
+    # dict(type='MLflowLoggerHook', experiment_name="test")
     dict(
         type="MLflowLoggerHook",
         experiment_name="MyExperiment",
@@ -148,7 +133,8 @@ custom_hooks = [
     )
 ]
 
-auto_scale_lr = dict(base_batch_size=64)
+
+auto_scale_lr = dict(base_batch_size=2)
 
 tta_model = dict(
     type='DetTTAModel',
